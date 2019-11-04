@@ -9,12 +9,18 @@
 using namespace std;
 
 static const int nBlocks = 10;
-static const int N = nBlocks;  // One day it's gonna be N+1
+static const int N = nBlocks;        // One day it's gonna be N+1
+static const int N_Pro = nBlocks+1;
 
 void FirstTest();  // std::map    + std::allocator
 void SecondTest(); // std::map    + MyAllocatorClass
 void ThirdTest();  // MyListClass + std::allocator
 void FourthTest(); // MyListClass + MyAllocatorClass
+
+
+void SecondTestPro(); // std::map    + MyAllocatorProClass
+void FourthTestPro(); // MyListClass + MyAllocatorProClass
+
 
 int main()
 {
@@ -30,6 +36,9 @@ int main()
 
     ThirdTest();  // MyListClass + std::allocator
     FourthTest(); // MyListClass + MyAllocatorClass
+
+    SecondTestPro(); // std::map    + MyAllocatorProClass
+    FourthTestPro(); // MyListClass + MyAllocatorProClass
 
     return 0;
 }
@@ -75,6 +84,24 @@ void SecondTest() // std::map + MyAllocatorClass
     cout << "//----------------------" << endl;
 }
 
+void SecondTestPro() // std::map + MyAllocatorProClass
+{
+    cout << endl << "Second Pro:" << endl;   // std::map + MyAllocator
+
+    auto Second = map<int, hard, less<int>, MyAllocatorProClass<pair<const int, hard>, nBlocks > >{};
+
+    for (int i = 0; i < N_Pro; i++)
+    {
+        Second.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
+        //Second.try_emplace(i, MyFactorial(i), MyFibonacci(i)); // isn't compiled! Why???
+    }
+
+    for (const auto & [i, v] : Second)
+        cout << i << " " << v << endl;
+
+    cout << "//----------------------" << endl;
+}
+
 void ThirdTest() // MyListClass + std::allocator
 {
     cout << endl << "Third:" << endl;
@@ -100,6 +127,24 @@ void FourthTest() // MyListClass + MyAllocatorClass
 
     MyListClass<hard, MyAllocatorClass<pair<const int, hard>, nBlocks>> Fourth;
     for (int i = 0; i < N; i++)
+    {
+        Fourth.Add(hard(MyFactorial(i), MyFibonacci(i)));
+        //Fourth.Emplace()
+    }
+    Fourth.PrepareToRead();
+    hard t;
+    while( Fourth.GetNext(t) )
+        cout << t << endl;
+
+    cout << "//----------------------" << endl;
+}
+
+void FourthTestPro() // MyListClass + MyAllocatorProClass
+{
+    cout << endl << "Fourth Pro:" << endl;
+
+    MyListClass<hard, MyAllocatorProClass<pair<const int, hard>, nBlocks>> Fourth;
+    for (int i = 0; i < N_Pro; i++)
     {
         Fourth.Add(hard(MyFactorial(i), MyFibonacci(i)));
         //Fourth.Emplace()

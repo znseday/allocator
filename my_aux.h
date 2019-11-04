@@ -60,6 +60,7 @@ int MyFibonacci(int n);    // I'd use unsigned but "hard" requires int anyway
 
 //---------------------------------------------------------------------------
 
+
 template <typename T, size_t BLOCKS>
 class MyAllocatorClass
 {
@@ -110,7 +111,7 @@ public:
 	{
 //        std::cout << MY_P_FUNC << std::endl;
 		new(p) U(std::forward<Args>(args)...);
-	};
+    }
 
     //template<typename U>
     //void destroy(U *p) const // U or T ??????????
@@ -122,7 +123,7 @@ public:
 
     MyAllocatorClass()
     {
-//        std::cout << MY_P_FUNC << std::endl;
+        //std::cout << MY_P_FUNC << std::endl;
         pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
     }
 
@@ -133,7 +134,100 @@ public:
             std::free(pMemory);
     }
 };
+//---------------------------------------------------------------------------
 
+template <typename T, size_t BLOCKS>
+class MyAllocatorProClass
+{
+protected:
+    //T *pMemory = nullptr;
+    unsigned takens = 0;
+
+    std::vector<T*> ps;
+    //std::vector<void*> ps; // works, but what is better in this case: <void*> or <T*> ?
+
+public:
+    using value_type = T;
+
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference = const T&;
+
+    template<typename U>
+    struct rebind
+    {
+        using other = MyAllocatorProClass<U,BLOCKS>;
+    };
+
+    T* allocate(std::size_t n) // const // is it ok to remove 'const' ???
+    {
+        (void)n;
+        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+
+        unsigned cur_b = takens / BLOCKS;
+        unsigned cur_i = takens % BLOCKS;
+
+        if (cur_b == ps.size())
+        {
+            T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
+            //void *pMemory = (void*)std::malloc(BLOCKS * sizeof(T));
+            ps.push_back(pMemory);
+        }
+
+        T *res = ps.back() + cur_i;
+//        std::cout << "res = " << res << std::endl;        // for debugging
+
+        takens++;
+
+//        std::cout << "size = " << ps.size() << std::endl; // for debugging
+
+        return res;
+    }
+
+    void deallocate(T *p, std::size_t n) const
+    {
+        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        //std::free(p); // not necessary cos we dealloacate whole memory at once
+        (void)p; (void)n;
+    }
+
+    template<typename U, typename ...Args>
+    void construct(U *p, Args&& ...args) const
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+        new(p) U(std::forward<Args>(args)...);
+    };
+
+    //template<typename U>
+    //void destroy(U *p) const // U or T ??????????
+    void destroy(T *p) const
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+        p->~T(); // This line is never executed for std::map but destructors of T is called. Why ???
+    }
+
+    MyAllocatorProClass()
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+
+        T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
+        //void *pMemory = (void*)std::malloc(BLOCKS * sizeof(T));
+        ps.push_back(pMemory);
+    }
+
+    ~MyAllocatorProClass()
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+        for (auto p : ps)
+            std::free(p);
+
+        //std::cout << "size = " << ps.size() << std::endl; // for debugging
+
+        //for (auto it = ps.cbegin(); it != ps.cend(); ++it)
+        //    std::free((void*)(*it));
+    }
+};
 
 //---------------------------------------------------------------------------
 
@@ -196,7 +290,7 @@ template <typename T, typename Allocator>
 void MyListClass<T,Allocator>::Add(T _data)
 {
     MyNodeStruct<T> *temp;
-    //MyNodeStruct<T>* newNode = new MyNodeStruct<T>;// into construct
+    //MyNodeStruct<T>* newNode = new MyNodeStruct<T>; // into construct
     MyNodeStruct<T> *newNode = ActualAlloc.allocate(1);
     ActualAlloc.construct(&newNode->data, std::forward<hard>(_data));
     //newNode->data = _data; // into construct
