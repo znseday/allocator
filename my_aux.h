@@ -228,7 +228,7 @@ public:
     };
 
     template<typename U>
-    void destroy(U *p) const // U or T ??????????
+    void destroy(U *p) const
     //void destroy(T *p) const
     {
         //std::cout << MY_P_FUNC << std::endl;
