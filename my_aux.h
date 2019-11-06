@@ -23,7 +23,10 @@ struct hard
 {
 	int fa;
 	int fi;
-	hard(int _fa, int _fi) : fa(_fa), fi(_fi) {}
+    hard(int _fa, int _fi) : fa(_fa), fi(_fi)
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+    }
 
 	//hard() = default;
     //hard(const hard &) = default;
@@ -36,20 +39,24 @@ struct hard
 
     hard & operator=(const hard &ob) = default; // for MyListClass
 
-    hard(const hard &ob) : fa(ob.fa), fi(ob.fi)
-    {
-        //std::cout << MY_P_FUNC << std::endl;
-    }
-    hard(hard &&ob) noexcept : fa(ob.fa), fi(ob.fi)
+//    hard(const hard &ob) : fa(ob.fa), fi(ob.fi)
+//    {
+//        //std::cout << MY_P_FUNC << std::endl;
+//    }
+//    hard(hard &&ob) noexcept : fa(ob.fa), fi(ob.fi)
+//    {
+//        //std::cout << MY_P_FUNC << std::endl;
+//    }
+
+    ~hard()
     {
         //std::cout << MY_P_FUNC << std::endl;
     }
 
-    ~hard() { /*std::cout << MY_P_FUNC << std::endl;*/ }
+    hard(hard &&) noexcept = delete;
+    hard(const hard &) = delete;
+    //hard(hard &&) = delete; // error: 'hard::hard(hard&&)' cannot be overloaded
 
-    //hard(hard &&) noexcept = delete; // not yet
-    //hard(const hard &) = delete;     // not yet
-    //hard(hard &&) = delete;          // not yet
 };
 std::ostream& operator<<(std::ostream& s, const hard& ob);
 
@@ -85,7 +92,7 @@ public:
     T* allocate(std::size_t n) // const // is it ok to remove 'const' ???
 	{
         (void)n;
-//        std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
 
         T *res = pMemory+takens;
         takens++; // to use it I had to remove 'const' above
@@ -100,7 +107,7 @@ public:
 
     void deallocate(T *p, std::size_t n) const
 	{
-//        std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
         //std::free(p); // not necessary cos we dealloacate whole memory at once
         (void)p;
         (void)n;
@@ -109,16 +116,16 @@ public:
 	template<typename U, typename ...Args>
     void construct(U *p, Args&& ...args) const
 	{
-//        std::cout << MY_P_FUNC << std::endl;
+        //std::cout << MY_P_FUNC << std::endl;
 		new(p) U(std::forward<Args>(args)...);
     }
 
-    //template<typename U>
-    //void destroy(U *p) const // U or T ??????????
-    void destroy(T *p) const
+    template<typename U>
+    void destroy(U *p) const
+    //void destroy(T *p) const
 	{
-//        std::cout << MY_P_FUNC << std::endl;
-        p->~T(); // This line is never executed for std::map but destructors of T is called. Why ???
+        //std::cout << MY_P_FUNC << std::endl;
+        p->~U();
 	}
 
     MyAllocatorClass()
@@ -160,6 +167,27 @@ public:
         using other = MyAllocatorProClass<U,BLOCKS>;
     };
 
+    MyAllocatorProClass()
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+
+        T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
+        //void *pMemory = (void*)std::malloc(BLOCKS * sizeof(T));
+        ps.push_back(pMemory);
+    }
+
+    ~MyAllocatorProClass()
+    {
+        //std::cout << MY_P_FUNC << std::endl;
+        for (auto p : ps)
+            std::free(p);
+
+        //std::cout << "size = " << ps.size() << std::endl; // for debugging
+
+        //for (auto it = ps.cbegin(); it != ps.cend(); ++it)
+        //    std::free((void*)(*it));                      // for debugging
+    }
+
     T* allocate(std::size_t n) // const // is it ok to remove 'const' ???
     {
         (void)n;
@@ -199,34 +227,14 @@ public:
         new(p) U(std::forward<Args>(args)...);
     };
 
-    //template<typename U>
-    //void destroy(U *p) const // U or T ??????????
-    void destroy(T *p) const
+    template<typename U>
+    void destroy(U *p) const // U or T ??????????
+    //void destroy(T *p) const
     {
         //std::cout << MY_P_FUNC << std::endl;
-        p->~T(); // This line is never executed for std::map but destructors of T is called. Why ???
+        p->~U();
     }
 
-    MyAllocatorProClass()
-    {
-        //std::cout << MY_P_FUNC << std::endl;
-
-        T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
-        //void *pMemory = (void*)std::malloc(BLOCKS * sizeof(T));
-        ps.push_back(pMemory);
-    }
-
-    ~MyAllocatorProClass()
-    {
-        //std::cout << MY_P_FUNC << std::endl;
-        for (auto p : ps)
-            std::free(p);
-
-        //std::cout << "size = " << ps.size() << std::endl; // for debugging
-
-        //for (auto it = ps.cbegin(); it != ps.cend(); ++it)
-        //    std::free((void*)(*it));
-    }
 };
 
 //---------------------------------------------------------------------------
@@ -257,7 +265,25 @@ public:
     template <typename ...Args>
     void Emplace(Args ...args)
     {
-        // how to replace code for this out of declaration?
+        // how to replace this code out of declaration?
+        MyNodeStruct<T> *temp;
+        MyNodeStruct<T> *newNode = ActualAlloc.allocate(1);
+        ActualAlloc.construct(&newNode->data, std::forward<Args>(args)...);
+        newNode->next = nullptr;
+
+        if (!pHead)
+            pHead = pCur = newNode;
+        else
+        {
+            pCur = pHead;
+            while (pCur)
+            {
+                temp = pCur;
+                pCur = pCur->next;
+            }
+            temp->next = newNode;
+        }
+
     }
 
 	void PrepareToRead();
@@ -281,8 +307,8 @@ MyListClass<T,Allocator>::~MyListClass()
 		temp = pCur;
 		pCur = pCur->next;
         //delete temp;
-        ActualAlloc.destroy(temp);       // temp or data ?
-        ActualAlloc.deallocate(temp, 1); // temp or data ?
+        ActualAlloc.destroy(temp);       // temp or data? What is better? 'temp' calls destructor of data anyway
+        ActualAlloc.deallocate(temp, 1); // temp or data? I think 'temp' cos we allocated MyNodeStruct<T>
 	}
 }
 

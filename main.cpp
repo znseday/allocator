@@ -17,7 +17,6 @@ void SecondTest(); // std::map    + MyAllocatorClass
 void ThirdTest();  // MyListClass + std::allocator
 void FourthTest(); // MyListClass + MyAllocatorClass
 
-
 void SecondTestPro(); // std::map    + MyAllocatorProClass
 void FourthTestPro(); // MyListClass + MyAllocatorProClass
 
@@ -49,12 +48,12 @@ void FirstTest() // std::map + std::allocator
     map<int,hard> First;
     for (int i = 0; i < N; i++)
     {
-        First.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
+        //First.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
 
-//        First.emplace(piecewise_construct, // isn't compiled! Why???
+//        First.emplace(piecewise_construct,
 //                      forward_as_tuple(i),
 //                      forward_as_tuple(MyFactorial(i), MyFibonacci(i)) );
-        //First.try_emplace(i, MyFactorial(i), MyFibonacci(i)); // isn't compiled! Why???
+        First.try_emplace(i, MyFactorial(i), MyFibonacci(i));
     }
 
 //	for (int i = 0; i < N; i++)          // Classic 'for', just to be sure
@@ -74,8 +73,8 @@ void SecondTest() // std::map + MyAllocatorClass
 
     for (int i = 0; i < N; i++)
     {
-        Second.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
-        //Second.try_emplace(i, MyFactorial(i), MyFibonacci(i)); // isn't compiled! Why???
+        //Second.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
+        Second.try_emplace(i, MyFactorial(i), MyFibonacci(i));
     }
 
     for (const auto & [i, v] : Second)   // Trying to use a brand new 'for'
@@ -92,8 +91,8 @@ void SecondTestPro() // std::map + MyAllocatorProClass
 
     for (int i = 0; i < N_Pro; i++)
     {
-        Second.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
-        //Second.try_emplace(i, MyFactorial(i), MyFibonacci(i)); // isn't compiled! Why???
+        //Second.emplace(i, hard(MyFactorial(i), MyFibonacci(i)));
+        Second.try_emplace(i, MyFactorial(i), MyFibonacci(i));
     }
 
     for (const auto & [i, v] : Second)
@@ -109,8 +108,8 @@ void ThirdTest() // MyListClass + std::allocator
     MyListClass<hard> Third;
     for (int i = 0; i < N; i++)
     {
-        Third.Add(hard(MyFactorial(i), MyFibonacci(i)));
-        //Third.Emplace()
+        //Third.Add(hard(MyFactorial(i), MyFibonacci(i)));
+        Third.Emplace(MyFactorial(i), MyFibonacci(i));
     }
     Third.PrepareToRead();
     hard t;
@@ -128,8 +127,8 @@ void FourthTest() // MyListClass + MyAllocatorClass
     MyListClass<hard, MyAllocatorClass<pair<const int, hard>, nBlocks>> Fourth;
     for (int i = 0; i < N; i++)
     {
-        Fourth.Add(hard(MyFactorial(i), MyFibonacci(i)));
-        //Fourth.Emplace()
+        //Fourth.Add(hard(MyFactorial(i), MyFibonacci(i)));
+        Fourth.Emplace(MyFactorial(i), MyFibonacci(i));
     }
     Fourth.PrepareToRead();
     hard t;
@@ -146,8 +145,8 @@ void FourthTestPro() // MyListClass + MyAllocatorProClass
     MyListClass<hard, MyAllocatorProClass<pair<const int, hard>, nBlocks>> Fourth;
     for (int i = 0; i < N_Pro; i++)
     {
-        Fourth.Add(hard(MyFactorial(i), MyFibonacci(i)));
-        //Fourth.Emplace()
+        //Fourth.Add(hard(MyFactorial(i), MyFibonacci(i)));
+        Fourth.Emplace(MyFactorial(i), MyFibonacci(i));
     }
     Fourth.PrepareToRead();
     hard t;
