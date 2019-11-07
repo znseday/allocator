@@ -4,7 +4,7 @@ compiler: clang
 addons:
   apt:
     packages:
-      - g++-8
+   #   - g++-8
    # - libboost-test-dev
 script:
 - cmake .
