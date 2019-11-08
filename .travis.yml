@@ -3,6 +3,10 @@ language: cpp
 compiler: clang
 addons:
   apt:
+    #  the idea is taken from https://docs.travis-ci.com/user/languages/c/
+    sources:
+      - ubuntu-toolchain-r-test
+            
     packages:
       - g++-8
    # - libboost-test-dev
