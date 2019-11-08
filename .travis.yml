@@ -4,8 +4,14 @@ compiler: clang
 addons:
   apt:
     packages:
-   #   - g++-8
+      - g++-8
    # - libboost-test-dev
+   
+before_install:
+# the idea is taken from https://github.com/travis-ci/travis-ci/issues/1379
+
+  -sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
+
 script:
 - cmake .
 - cmake --build .
