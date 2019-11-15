@@ -18,9 +18,9 @@ add_executable(allocator main.cpp )
 #add_executable(my_tests my_test.cpp)
 
 if(WIN32 OR WIN64)
-	add_library(my_aux my_aux.cpp my_aux.h)
+        add_library(my_aux my_aux.cpp my_aux.h my_alloc.h)
 else()
-	add_library(my_aux my_aux.cpp)
+        add_library(my_aux my_aux.cpp)
 endif()
 
 if(WIN32 OR WIN64)
@@ -66,5 +66,3 @@ include(CPack)
 #enable_testing()
 
 #add_test(my_tests_ my_tests)
-
-
