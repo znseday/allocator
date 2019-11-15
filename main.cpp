@@ -23,7 +23,8 @@ void FourthTestPro(); // MyListClass + MyAllocatorProClass
 void VectorTest();    // std::vector + MyAllocatorClass
 void VectorCrashTestPro();  // std::vector + MyAllocatorProClass
 
-void CopyConstructorTest();
+void CopyTheSameConstructorsTest();
+void CopyDifferConstructorsTest();
 
 
 int main()
@@ -50,7 +51,8 @@ int main()
     // Doesn't work. Causes Heap problems
     //VectorCrashTestPro();  // std::vector + MyAllocatorProClass
 
-    CopyConstructorTest();
+    CopyTheSameConstructorsTest();
+    CopyDifferConstructorsTest();
 
     return 0;
 }
@@ -191,7 +193,7 @@ void VectorCrashTestPro()  // std::vector + MyAllocatorProClass
     cout << "//----------------------" << endl;
 }
 
-void CopyConstructorTest()
+void CopyTheSameConstructorsTest()
 {
     cout << endl << "CopyConstructorTest (allocators are the same):" << endl;
 
@@ -205,13 +207,21 @@ void CopyConstructorTest()
         cout << t << endl;
 
     cout << "//----------------------" << endl;
+}
 
+void CopyDifferConstructorsTest()
+{
     cout << endl << "CopyConstructorTest (allocators are different):" << endl;
 
-    MyListClass<hard, MyAllocatorClass<hard, nBlocks>> Dst2 = SrcList;
+    MyListClass<hard> SrcList;
+    for (int i = 0; i < N; i++)
+        SrcList.Emplace(MyFactorial(i), MyFibonacci(i));
+
+    MyListClass<hard, MyAllocatorClass<hard, nBlocks>> DstList = SrcList;
 
     for (const auto &t : DstList)
         cout << t << endl;
 
     cout << "//----------------------" << endl;
 }
+
