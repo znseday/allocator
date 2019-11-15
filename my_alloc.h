@@ -158,7 +158,7 @@ public:
         unsigned cur_i = takens % BLOCKS;
 
         unsigned future_b = (takens+n-1) / BLOCKS; // if n == 1 then cur_b == future_b
-        size_t ps_size = ps.size();
+        //size_t ps_size = ps.size();
 
         while (future_b >= ps.size())
         {
