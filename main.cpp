@@ -38,7 +38,7 @@ int main()
     // some
 #endif
 
-    MY_DEBUG_ONLY(std::cout << "Homework allocator (DEBUG)" << std::endl); // doesn't work ((( why?
+    MY_DEBUG_ONLY(std::cout << "Homework allocator (DEBUG)" << std::endl);
 
     FirstTest();  // std::map    + std::allocator
     SecondTest(); // std::map    + MyAllocatorClass
