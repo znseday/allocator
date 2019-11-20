@@ -10,9 +10,15 @@
 
 // __FUNCSIG__ is for VS, but Qt (mingw) works with __PRETTY_FUNCTION__
 #if ((defined WIN32) || (defined WIN64)) && (defined _MSC_VER)
-//#define MY_P_FUNC __FUNCSIG__
+#define MY_P_FUNC __FUNCSIG__
 #else
 #define MY_P_FUNC __PRETTY_FUNCTION__
+#endif
+
+#if (defined NDEBUG)
+#define MY_DEBUG_ONLY(x)
+#else
+#define MY_DEBUG_ONLY(x) (x)
 #endif
 
 
@@ -42,14 +48,21 @@ public:
     template<typename U>
     MyAllocatorClass(const MyAllocatorClass<U,BLOCKS> &)  // ???  Added for C++Builder
     {
-        //std::cout << MY_P_FUNC << " (Added for C++Builder)" << std::endl;
+        std::cout << MY_P_FUNC << " (Added for C++Builder)" << std::endl; // never called
     }
+
+//    MyAllocatorClass(MyAllocatorClass &&ob) noexcept : pMemory(ob.pMemory), takens(ob.takens)
+//    {
+//        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl); // never called
+//        ob.pMemory = nullptr;
+//        ob.takens = 0;
+//    }
 
     T* allocate( /*[[maybe_unused]]*/ std::size_t n )
     {
-        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl);
 
-        //if (n != 1)              // Can we solve the problem like this?
+        //if (n != 1)              // Not really necessary for plain allocator
         //    throw std::bad_alloc();
 
         T *res = pMemory+takens;
@@ -65,33 +78,33 @@ public:
 
     void deallocate( [[maybe_unused]] T *p, [[maybe_unused]] std::size_t n ) const
     {
-        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl);
         //std::free(p); // not necessary cos we dealloacate whole memory at once
     }
 
     template<typename U, typename ...Args>
     void construct(U *p, Args&& ...args) const
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         new(p) U(std::forward<Args>(args)...);
     }
 
     template<typename U>
     void destroy(U *p) const
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         p->~U();
     }
 
     MyAllocatorClass()
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
     }
 
     ~MyAllocatorClass()
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         if (pMemory)
             std::free(pMemory);
     }
@@ -121,23 +134,25 @@ public:
         using other = MyAllocatorProClass<U,BLOCKS>;
     };
 
-
     MyAllocatorProClass(const MyAllocatorProClass &) = default;
 
     template<typename U>
-    MyAllocatorProClass(const MyAllocatorProClass<U,BLOCKS> &) {} // ???
+    MyAllocatorProClass(const MyAllocatorProClass<U,BLOCKS> &)// ??? Added for C++Builder
+    {
+        std::cout << MY_P_FUNC << " (Added for C++Builder)" << std::endl; // never called
+    }
 
 
     MyAllocatorProClass()
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
         ps.push_back(pMemory);
     }
 
     ~MyAllocatorProClass()
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         for (auto p : ps)
             std::free(p);
 
@@ -149,36 +164,34 @@ public:
 
     T* allocate( /*[[maybe_unused]]*/ std::size_t n)
     {
-        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl);
 
-        //if (n != 1)              // Can we solve the problem like this?
-        //    throw std::bad_alloc();
+        if (n != 1)
+            throw std::bad_alloc();
 
         unsigned cur_b = takens / BLOCKS;
         unsigned cur_i = takens % BLOCKS;
 
-        unsigned future_b = (takens+n-1) / BLOCKS; // if n == 1 then cur_b == future_b
-        //size_t ps_size = ps.size();
-
-        while (future_b >= ps.size())
-        {
-            T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
-            ps.push_back(pMemory);
-        }
-
-//        if (cur_b == ps.size()) // old version
+//        unsigned future_b = (takens+n-1) / BLOCKS; // if n == 1 then cur_b == future_b
+//        while (future_b >= ps.size())
 //        {
 //            T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
 //            ps.push_back(pMemory);
 //        }
 
-        //T *res = ps.back() + cur_i;  // old version
-        T *res = ps[cur_b] + cur_i;
+        if (cur_b == ps.size())
+        {
+            T *pMemory = (T*)std::malloc(BLOCKS * sizeof(T));
+            ps.push_back(pMemory);
+        }
+
+        T *res = ps.back() + cur_i;
+        //T *res = ps[cur_b] + cur_i;
 
 //        std::cout << "res = " << res << std::endl;        // for debugging
 
-        //takens++; // old version
-        takens += n;
+        takens++; // (n == 1)
+        //takens += n;
 
 //        std::cout << "size = " << ps.size() << std::endl; // for debugging
         return res;
@@ -186,14 +199,14 @@ public:
 
     void deallocate( [[maybe_unused]]T *p, [[maybe_unused]] std::size_t n ) const
     {
-        //std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << "[n = " << n << "]" << std::endl);
         //std::free(p); // not necessary cos we dealloacate whole memory at once
     }
 
     template<typename U, typename ...Args>
     void construct(U *p, Args&& ...args) const
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         new(p) U(std::forward<Args>(args)...);
     }
 
@@ -201,7 +214,7 @@ public:
     void destroy(U *p) const
     //void destroy(T *p) const
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
         p->~U();
     }
 

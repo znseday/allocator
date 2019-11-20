@@ -17,6 +17,12 @@
 #define MY_P_FUNC __PRETTY_FUNCTION__
 #endif
 
+#if (defined NDEBUG)
+#define MY_DEBUG_ONLY(x)
+#else
+#define MY_DEBUG_ONLY(x) (x)
+#endif
+
 
 struct hard
 {
@@ -24,7 +30,7 @@ struct hard
 	int fi;
     hard(int _fa, int _fi) : fa(_fa), fi(_fi)
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
     }
 
 	//hard() = default;
@@ -33,28 +39,28 @@ struct hard
 
     hard() : fa(0), fi(0) // for temp object
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
     }
 
     hard & operator=(const hard &ob) = default; // for MyListClass
 
-    hard(const hard &ob) : fa(ob.fa), fi(ob.fi) // It's needed for ActualAlloc.construct(&pHead->data, ob.pHead->data);
-    {
-        //std::cout << MY_P_FUNC << std::endl;
-    }
-    hard(hard &&ob) noexcept : fa(ob.fa), fi(ob.fi) // for std::vector
-    {
-        //std::cout << MY_P_FUNC << std::endl;
-    }
+    //hard(const hard &ob) : fa(ob.fa), fi(ob.fi) // It's needed for ActualAlloc.construct(&pHead->data, ob.pHead->data);
+    //{
+        //MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
+    //}
+
+//    hard(hard &&ob) noexcept : fa(ob.fa), fi(ob.fi) // for std::vector
+//    {
+//        //MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
+//    }
 
     ~hard()
     {
-        //std::cout << MY_P_FUNC << std::endl;
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
     }
 
-    //hard(hard &&) noexcept = delete;
-    //hard(const hard &) = delete;
-    //hard(hard &&) = delete; // error: 'hard::hard(hard&&)' cannot be overloaded
+    hard(hard &&) noexcept = delete;
+    hard(const hard &) = delete;
 
 };
 std::ostream& operator<<(std::ostream& s, const hard& ob);
@@ -110,87 +116,23 @@ public:
     //template <typename ObAlloc>
     //friend MyListClass<T,ObAlloc>; // Why doesn't it work?
 
-    MyListClass() = default;
-    MyListClass(const MyListClass &ob)
-    {
-        if (!ob.pHead)
-            return;
+    MyListClass();
+    MyListClass(const MyListClass &ob);
 
-        pHead = ActualAlloc.allocate(1);
-        ActualAlloc.construct(&pHead->data, ob.pHead->data);
-        pHead->next = nullptr;
-        pCur = pHead;
-
-        MyNodeStruct<T> *newNode;
-        MyNodeStruct<T> *pCurOb = ob.pHead->next;
-        while (pCurOb)
-        {
-            newNode = ActualAlloc.allocate(1);
-            ActualAlloc.construct(&newNode->data, pCurOb->data);
-            newNode->next = nullptr;
-
-            pCur->next = newNode;
-            pCur = pCur->next;
-
-            pCurOb = pCurOb->next;
-        }
-    }
+    MyListClass(MyListClass &&ob) noexcept;
 
     template <typename ObAlloc>
-    MyListClass(const MyListClass<T,ObAlloc> &ob)
-    {
-        if (!ob.GetHead()) // I want to use 'ob.pHead', so I want to make 'ob' as a friend
-            return;
+    MyListClass(const MyListClass<T,ObAlloc> &ob);
 
-        pHead = ActualAlloc.allocate(1);
-        ActualAlloc.construct(&pHead->data, ob.GetHead()->data);
-        pHead->next = nullptr;
-        pCur = pHead;
-
-        MyNodeStruct<T> *newNode;
-        MyNodeStruct<T> *pCurOb = ob.GetHead()->next;
-
-
-        while (pCurOb)
-        {
-            newNode = ActualAlloc.allocate(1);
-            ActualAlloc.construct(&newNode->data, pCurOb->data);
-            newNode->next = nullptr;
-
-            pCur->next = newNode;
-            pCur = pCur->next;
-
-            pCurOb = pCurOb->next;
-        }
-    }
+    template <typename ObAlloc>
+    MyListClass(MyListClass<T,ObAlloc> &&ob);
 
 	~MyListClass();
 
 	void Add(T _data);
 
     template <typename ...Args>
-    void Emplace(Args ...args)
-    {
-        // how to replace this code out of declaration?
-        MyNodeStruct<T> *temp;
-        MyNodeStruct<T> *newNode = ActualAlloc.allocate(1);
-        ActualAlloc.construct(&newNode->data, std::forward<Args>(args)...);
-        newNode->next = nullptr;
-
-        if (!pHead)
-            pHead = pCur = newNode;
-        else
-        {
-            pCur = pHead;
-            while (pCur)
-            {
-                temp = pCur;
-                pCur = pCur->next;
-            }
-            temp->next = newNode;
-        }
-
-    }
+    void Emplace(Args ...args);
 
 	void PrepareToRead();
 	bool GetNext(T &_data);
@@ -199,13 +141,106 @@ public:
     MyIterator<T> end()   {return MyIterator<T>();}
 
     MyNodeStruct<T>* GetHead() const {return pHead;}
+    void HeadToNull() {pHead = nullptr;}
 };
 
-//template <typename T, typename Allocator>
-//MyListClass<T,Allocator>::MyListClass()
-//{
-//    //std::cout << MY_P_FUNC << std::endl;
-//}
+
+template <typename T, typename Allocator /*= std::allocator<T>*/ >
+MyListClass<T,Allocator>::MyListClass(const MyListClass<T,Allocator> &ob)
+{
+    if (!ob.pHead)
+        return;
+
+    pHead = ActualAlloc.allocate(1);
+    ActualAlloc.construct(&pHead->data, ob.pHead->data);
+    pHead->next = nullptr;
+    pCur = pHead;
+
+    MyNodeStruct<T> *newNode;
+    MyNodeStruct<T> *pCurOb = ob.pHead->next;
+    while (pCurOb)
+    {
+        newNode = ActualAlloc.allocate(1);
+        ActualAlloc.construct(&newNode->data, pCurOb->data);
+        newNode->next = nullptr;
+
+        pCur->next = newNode;
+        pCur = pCur->next;
+
+        pCurOb = pCurOb->next;
+    }
+}
+
+template <typename T, typename Allocator /*= std::allocator<T>*/ >
+template <typename ObAlloc>
+MyListClass<T,Allocator>::MyListClass(const MyListClass<T,ObAlloc> &ob)
+{
+    if (!ob.GetHead())
+        return;
+
+    pHead = ActualAlloc.allocate(1);
+    ActualAlloc.construct(&pHead->data, ob.GetHead()->data);
+    pHead->next = nullptr;
+    pCur = pHead;
+
+    MyNodeStruct<T> *newNode;
+    MyNodeStruct<T> *pCurOb = ob.GetHead()->next;
+
+    while (pCurOb)
+    {
+        newNode = ActualAlloc.allocate(1);
+        ActualAlloc.construct(&newNode->data, pCurOb->data);
+        newNode->next = nullptr;
+
+        pCur->next = newNode;
+        pCur = pCur->next;
+
+        pCurOb = pCurOb->next;
+    }
+}
+
+template <typename T, typename Allocator /*= std::allocator<T>*/ >
+template <typename ObAlloc>
+MyListClass<T,Allocator>::MyListClass(MyListClass<T,ObAlloc> &&ob)
+{
+    if (!ob.GetHead())
+        return;
+
+    pHead = ActualAlloc.allocate(1);
+    ActualAlloc.construct(&pHead->data, std::move(ob.GetHead()->data));
+    pHead->next = nullptr;
+    pCur = pHead;
+
+    MyNodeStruct<T> *newNode;
+    MyNodeStruct<T> *pCurOb = ob.GetHead()->next;
+
+    while (pCurOb)
+    {
+        newNode = ActualAlloc.allocate(1);
+        ActualAlloc.construct(&newNode->data, std::move(pCurOb->data));
+        newNode->next = nullptr;
+
+        pCur->next = newNode;
+        pCur = pCur->next;
+
+        pCurOb = pCurOb->next;
+    }
+
+    ob.HeadToNull();
+}
+
+template <typename T, typename Allocator /*= std::allocator<T>*/ >
+MyListClass<T,Allocator>::MyListClass(MyListClass<T,Allocator> &&ob) noexcept
+    : pHead(ob.pHead), ActualAlloc(std::move(ob.ActualAlloc))
+{
+    ob.pHead = nullptr;
+}
+
+template <typename T, typename Allocator>
+MyListClass<T,Allocator>::MyListClass()
+{
+    MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
+}
 
 template <typename T, typename Allocator>
 MyListClass<T,Allocator>::~MyListClass()
@@ -227,10 +262,8 @@ template <typename T, typename Allocator>
 void MyListClass<T,Allocator>::Add(T _data)
 {
     MyNodeStruct<T> *temp;
-    //MyNodeStruct<T>* newNode = new MyNodeStruct<T>; // into construct
     MyNodeStruct<T> *newNode = ActualAlloc.allocate(1);
     ActualAlloc.construct(&newNode->data, std::forward<hard>(_data));
-    //newNode->data = _data; // into construct
 	newNode->next = nullptr;
 
 	if (!pHead)
@@ -247,11 +280,29 @@ void MyListClass<T,Allocator>::Add(T _data)
 	}
 }
 
-// How to write it correct?
-//template <typename T, typename Allocator, typename ...Args>
-//void MyListClass<T,Allocator>::Emplace(Args ...args)
-//{
-//}
+
+template <typename T, typename Allocator  /*= std::allocator<T>*/ >
+template <typename ...Args>
+void MyListClass<T,Allocator>::Emplace(Args ...args)
+{
+    MyNodeStruct<T> *temp;
+    MyNodeStruct<T> *newNode = ActualAlloc.allocate(1);
+    ActualAlloc.construct(&newNode->data, std::forward<Args>(args)...);
+    newNode->next = nullptr;
+
+    if (!pHead)
+        pHead = pCur = newNode;
+    else
+    {
+        pCur = pHead;
+        while (pCur)
+        {
+          temp = pCur;
+          pCur = pCur->next;
+        }
+        temp->next = newNode;
+    }
+}
 
 template <typename T, typename Allocator>
 void MyListClass<T,Allocator>::PrepareToRead()

@@ -21,11 +21,13 @@ void SecondTestPro(); // std::map    + MyAllocatorProClass
 void FourthTestPro(); // MyListClass + MyAllocatorProClass
 
 void VectorTest();    // std::vector + MyAllocatorClass
-void VectorCrashTestPro();  // std::vector + MyAllocatorProClass
+//void VectorCrashTestPro();  // std::vector + MyAllocatorProClass
 
 void CopyTheSameConstructorsTest();
 void CopyDifferConstructorsTest();
 
+void MoveTheSameConstructorsTest();
+void MoveDifferConstructorsTest();
 
 int main()
 {
@@ -35,6 +37,8 @@ int main()
 #else
     // some
 #endif
+
+    MY_DEBUG_ONLY(std::cout << "Homework allocator (DEBUG)" << std::endl); // doesn't work ((( why?
 
     FirstTest();  // std::map    + std::allocator
     SecondTest(); // std::map    + MyAllocatorClass
@@ -53,6 +57,9 @@ int main()
 
     CopyTheSameConstructorsTest();
     CopyDifferConstructorsTest();
+
+    MoveTheSameConstructorsTest();
+    MoveDifferConstructorsTest();
 
     return 0;
 }
@@ -160,17 +167,15 @@ void FourthTestPro() // MyListClass + MyAllocatorProClass
     cout << "//----------------------" << endl;
 }
 
-
-
 void VectorTest()  // std::vector + MyAllocatorClass
 {
     cout << endl << "VectorTest (std::vector + MyAllocatorClass):" << endl;
 
     // if N == 10 them 31 = 1+2+4+8+16 ('n' for vectors)
-    auto Vector = vector<hard, MyAllocatorClass<hard, 31> >{};
+    auto Vector = vector<int, MyAllocatorClass<int, 31> >{};
 
     for (int i = 0; i < N; i++)
-        Vector.emplace_back(MyFactorial(i), MyFibonacci(i) );
+        Vector.emplace_back(MyFactorial(i));
 
     for (const auto &v : Vector)
         cout << v << endl;
@@ -178,30 +183,30 @@ void VectorTest()  // std::vector + MyAllocatorClass
     cout << "//----------------------" << endl;
 }
 
-void VectorCrashTestPro()  // std::vector + MyAllocatorProClass
-{
-    cout << endl << "CrashTestPro (std::vector + MyAllocatorProClass):" << endl;
+//void VectorCrashTestPro()  // std::vector + MyAllocatorProClass
+//{
+//    cout << endl << "CrashTestPro (std::vector + MyAllocatorProClass):" << endl;
 
-    auto Crash = vector<hard, MyAllocatorProClass<hard,nBlocks> >{};
+//    auto Crash = vector<hard, MyAllocatorProClass<hard,nBlocks> >{};
 
-    for (int i = 0; i < N_Pro*100; i++)
-        Crash.emplace_back(MyFactorial(i), MyFibonacci(i) );
+//    for (int i = 0; i < N_Pro*100; i++)
+//        Crash.emplace_back(MyFactorial(i), MyFibonacci(i) );
 
-    for (const auto &v : Crash)
-        cout << v << endl;
+//    for (const auto &v : Crash)
+//        cout << v << endl;
 
-    cout << "//----------------------" << endl;
-}
+//    cout << "//----------------------" << endl;
+//}
 
 void CopyTheSameConstructorsTest()
 {
     cout << endl << "CopyConstructorTest (allocators are the same):" << endl;
 
-    MyListClass<hard> SrcList;
+    MyListClass<int> SrcList;
     for (int i = 0; i < N; i++)
-        SrcList.Emplace(MyFactorial(i), MyFibonacci(i));
+        SrcList.Emplace(MyFactorial(i));
 
-    MyListClass<hard> DstList = SrcList;
+    MyListClass<int> DstList = SrcList;
 
     for (const auto &t : DstList)
         cout << t << endl;
@@ -213,15 +218,48 @@ void CopyDifferConstructorsTest()
 {
     cout << endl << "CopyConstructorTest (allocators are different):" << endl;
 
-    MyListClass<hard> SrcList;
+    MyListClass<int> SrcList;
     for (int i = 0; i < N; i++)
-        SrcList.Emplace(MyFactorial(i), MyFibonacci(i));
+        SrcList.Emplace(MyFactorial(i));
 
-    MyListClass<hard, MyAllocatorClass<hard, nBlocks>> DstList = SrcList;
+    MyListClass<int, MyAllocatorClass<int, nBlocks>> DstList = SrcList;
 
     for (const auto &t : DstList)
         cout << t << endl;
 
     cout << "//----------------------" << endl;
 }
+
+void MoveTheSameConstructorsTest()
+{
+    cout << endl << "MoveConstructorTest (allocators are the same):" << endl;
+
+    MyListClass<int> SrcList;
+    for (int i = 0; i < N; i++)
+        SrcList.Emplace(MyFactorial(i));
+
+    MyListClass<int> DstList = std::move(SrcList);
+
+    for (const auto &t : DstList)
+        cout << t << endl;
+
+    cout << "//----------------------" << endl;
+}
+
+void MoveDifferConstructorsTest()
+{
+    cout << endl << "MoveConstructorTest (allocators are different):" << endl;
+
+    MyListClass<int> SrcList;
+    for (int i = 0; i < N; i++)
+        SrcList.Emplace(MyFactorial(i));
+
+    MyListClass<int, MyAllocatorClass<int, nBlocks>> DstList = std::move(SrcList);
+
+    for (const auto &t : DstList)
+        cout << t << endl;
+
+    cout << "//----------------------" << endl;
+}
+
 
