@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
+set(CMAKE_BUILD_TYPE Release)
+
 if(WIN32 OR WIN64)
 	message(STATUS "My Windows detected")
 	project(allocator VERSION 0.0.1000)
@@ -7,6 +9,8 @@ if(WIN32 OR WIN64)
 else()
 	project(allocator VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
 endif()
+
+set(CMAKE_BUILD_TYPE Release)
 
 # find_package(Threads REQUIRED)
 # find_package(Boost COMPONENTS unit_test_framework REQUIRED)
