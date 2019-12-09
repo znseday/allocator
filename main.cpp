@@ -29,6 +29,9 @@ void CopyDifferConstructorsTest();
 void MoveTheSameConstructorsTest();
 void MoveDifferConstructorsTest();
 
+void MoveTheSameCustomConstructorsTest();
+void MoveTheSameCustomConstructorsTestPro();
+
 int main()
 {
 #if (defined WIN32) || (defined WIN64)
@@ -38,7 +41,7 @@ int main()
     // some
 #endif
 
-    MY_DEBUG_ONLY(std::cout << "Homework allocator (DEBUG)" << std::endl);
+    MY_DEBUG_ONLY(std::cout << "Homework allocator (DEBUG)" << std::endl); // doesn't work ((( why?
 
     FirstTest();  // std::map    + std::allocator
     SecondTest(); // std::map    + MyAllocatorClass
@@ -55,11 +58,16 @@ int main()
     // Doesn't work. Causes Heap problems
     //VectorCrashTestPro();  // std::vector + MyAllocatorProClass
 
+
     CopyTheSameConstructorsTest();
     CopyDifferConstructorsTest();
 
     MoveTheSameConstructorsTest();
     MoveDifferConstructorsTest();
+
+
+    MoveTheSameCustomConstructorsTest();
+    MoveTheSameCustomConstructorsTestPro();
 
     return 0;
 }
@@ -255,6 +263,47 @@ void MoveDifferConstructorsTest()
         SrcList.Emplace(MyFactorial(i));
 
     MyListClass<int, MyAllocatorClass<int, nBlocks>> DstList = std::move(SrcList);
+
+    //for (int i = 0; i < N; i++)                // for crushing
+    //    DstList.Emplace(MyFactorial(i));
+
+    for (const auto &t : DstList)
+        cout << t << endl;
+
+    cout << "//----------------------" << endl;
+}
+
+void MoveTheSameCustomConstructorsTest()
+{
+    cout << endl << "MoveTheSameCustomConstructorsTest (allocators are the same):" << endl;
+
+    MyListClass<int, MyAllocatorClass<int, nBlocks>> SrcList;
+    for (int i = 0; i < N; i++)
+        SrcList.Emplace(MyFactorial(i));
+
+    MyListClass<int, MyAllocatorClass<int, nBlocks>> DstList = std::move(SrcList);
+
+    //for (int i = 0; i < N; i++)                // for crushing
+    //    DstList.Emplace(MyFactorial(i));
+
+    for (const auto &t : DstList)
+        cout << t << endl;
+
+    cout << "//----------------------" << endl;
+}
+
+void MoveTheSameCustomConstructorsTestPro()
+{
+    cout << endl << "MoveTheSameCustomConstructorsTestPro (allocators are the same and pro):" << endl;
+
+    MyListClass<int, MyAllocatorProClass<int, nBlocks>> SrcList;
+    for (int i = 0; i < N; i++)
+        SrcList.Emplace(MyFactorial(i));
+
+    MyListClass<int, MyAllocatorProClass<int, nBlocks>> DstList = std::move(SrcList);
+
+    for (int i = 0; i < N; i++)     // crushing doen't happen cos it's Pro allocator
+        DstList.Emplace(MyFactorial(i));
 
     for (const auto &t : DstList)
         cout << t << endl;

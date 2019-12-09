@@ -43,20 +43,23 @@ public:
         using other = MyAllocatorClass<U,BLOCKS>;
     };
 
-    MyAllocatorClass(const MyAllocatorClass &) = default;
+    //MyAllocatorClass(const MyAllocatorClass &) = default;
+    MyAllocatorClass(const MyAllocatorClass &) = delete;
+
+    MyAllocatorClass(MyAllocatorClass &&ob) noexcept
+    {
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
+        pMemory = ob.pMemory;
+        takens = ob.takens;
+        ob.pMemory = nullptr;
+        ob.takens = 0;
+    }
 
     template<typename U>
     MyAllocatorClass(const MyAllocatorClass<U,BLOCKS> &)  // ???  Added for C++Builder
     {
         std::cout << MY_P_FUNC << " (Added for C++Builder)" << std::endl; // never called
     }
-
-//    MyAllocatorClass(MyAllocatorClass &&ob) noexcept : pMemory(ob.pMemory), takens(ob.takens)
-//    {
-//        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl); // never called
-//        ob.pMemory = nullptr;
-//        ob.takens = 0;
-//    }
 
     T* allocate( /*[[maybe_unused]]*/ std::size_t n )
     {
@@ -72,7 +75,7 @@ public:
         else
         {
             throw std::bad_alloc();
-            return nullptr;         // just in case. Is it needed???
+            //return nullptr;
         }
     }
 
@@ -134,7 +137,8 @@ public:
         using other = MyAllocatorProClass<U,BLOCKS>;
     };
 
-    MyAllocatorProClass(const MyAllocatorProClass &) = default;
+    //MyAllocatorProClass(const MyAllocatorProClass &) = default;
+    MyAllocatorProClass(const MyAllocatorProClass &) = delete;
 
     template<typename U>
     MyAllocatorProClass(const MyAllocatorProClass<U,BLOCKS> &)// ??? Added for C++Builder
@@ -142,6 +146,13 @@ public:
         std::cout << MY_P_FUNC << " (Added for C++Builder)" << std::endl; // never called
     }
 
+    MyAllocatorProClass(MyAllocatorProClass &&ob) noexcept
+    {
+        MY_DEBUG_ONLY(std::cout << MY_P_FUNC << std::endl);
+        ps = std::move(ob.ps); // is that ok?
+        takens = ob.takens;
+        ob.takens = 0;
+    }
 
     MyAllocatorProClass()
     {

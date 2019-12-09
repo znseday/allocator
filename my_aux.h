@@ -17,7 +17,7 @@
 #define MY_P_FUNC __PRETTY_FUNCTION__
 #endif
 
-#if (defined NDEBUG)
+#if ((defined NDEBUG) || (defined _NDEBUG))
 #define MY_DEBUG_ONLY(x)
 #else
 #define MY_DEBUG_ONLY(x) (x)
@@ -88,17 +88,18 @@ private:
 public:
     MyIterator() = default;
     MyIterator(MyNodeStruct<T> *p) : pCur(p) {}
-    bool operator!=(MyIterator it) const      // or (const MyIterator &it) as usual ???
+    bool operator!=(const MyIterator &it) const
     {
         return pCur != it.pCur;
     }
-    MyIterator operator++()  // or MyIterator & operator++() ?
+    const MyIterator & operator++()  // or MyIterator operator++() ?
     {
         pCur = pCur->next;
         return *this;
     }
-    T & operator*() {return pCur->data;}
     //const T & operator*() const  {return pCur->data;}
+    T & operator*() {return pCur->data;}   // with or without const?
+
 };
 
 template <typename T, typename Allocator = std::allocator<T> >
